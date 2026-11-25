@@ -1,0 +1,345 @@
+<!DOCTYPE html>
+<html lang="tr">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Boru Gitar – Metal borulu hava gitarı</title>
+<style>
+:root{--bg:#e6e9ec;--surf:#f5f6f7;--ink:#14191e;--mute:#566069;--line:#b9c0c7;--acc:#0b7f90;--accink:#fff;--pipe1:#cfd5da;--pipe2:#7d8890;box-sizing:border-box;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}
+@media (prefers-color-scheme:dark){:root:not([data-theme="light"]){--bg:#0f1316;--surf:#171d22;--ink:#e8edf0;--mute:#93a0aa;--line:#2b353d;--acc:#34c9dd;--accink:#04181c}}
+:root[data-theme="dark"]{--bg:#0f1316;--surf:#171d22;--ink:#e8edf0;--mute:#93a0aa;--line:#2b353d;--acc:#34c9dd;--accink:#04181c}
+html{scroll-padding-top:env(safe-area-inset-top,0px)}
+*{box-sizing:border-box}[hidden]{display:none!important}
+body{margin:0;background:var(--bg);color:var(--ink);font:16px/1.6 system-ui,-apple-system,"Segoe UI",Roboto,sans-serif}
+.w{max-width:1100px;margin:auto;padding:0 20px}
+h1,h2,h3{font-family:Bahnschrift,"DIN Alternate","Roboto Condensed","Arial Narrow",system-ui,sans-serif;letter-spacing:-.01em;line-height:1.1;margin:0}
+h1{font-size:clamp(2.4rem,7vw,4.6rem);font-weight:700}
+h2{font-size:clamp(1.6rem,3.5vw,2.2rem);margin-bottom:12px}
+h3{font-size:1.15rem;margin-bottom:6px}
+.hero{padding:36px 0 14px}
+.hero p{max-width:62ch;color:var(--mute);margin:12px 0 0}
+.stage{margin-top:18px;background:#0c0f11;border:1px solid var(--line);border-radius:10px;overflow:hidden;line-height:0}
+canvas{width:100%;height:auto;display:block;touch-action:none;cursor:crosshair}
+.row{display:flex;flex-wrap:wrap;gap:8px;margin-top:12px;align-items:center}
+button{font:inherit;border:1px solid var(--line);background:var(--surf);color:var(--ink);padding:9px 14px;border-radius:6px;cursor:pointer}
+button.p{background:var(--acc);color:var(--accink);border-color:var(--acc);font-weight:700}
+button.on{border-color:var(--acc);box-shadow:inset 0 0 0 1px var(--acc)}
+button:disabled{opacity:.5;cursor:not-allowed}
+button:focus-visible,input:focus-visible,a:focus-visible{outline:3px solid var(--acc);outline-offset:2px}
+#status{color:var(--mute);font-size:.92rem}
+input[type=range]{accent-color:var(--acc);width:120px}
+.seg{display:flex}.seg button:first-child{border-radius:6px 0 0 6px}.seg button:last-child{border-radius:0 6px 6px 0;border-left:0}
+.how{margin:14px 0 0;padding:14px 16px 14px 34px;background:var(--surf);border:1px solid var(--line);border-radius:8px;color:var(--mute);font-size:.94rem}
+.how b{color:var(--ink)}
+section{padding:48px 0 0}
+section p{max-width:70ch;color:var(--mute)}
+.grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(260px,1fr));gap:26px;margin-top:18px}
+.grid div{border-top:3px solid var(--acc);padding-top:12px}
+.grid p{margin:0}
+.scroll{overflow-x:auto;margin-top:16px}
+table{border-collapse:collapse;width:100%;min-width:640px;font-size:.93rem}
+th,td{text-align:left;padding:10px 12px;border-bottom:1px solid var(--line);vertical-align:top}
+th{font-weight:700}td.me,th.me{background:var(--surf);color:var(--ink);font-weight:600}
+td:first-child{color:var(--mute)}
+.pipe{height:14px;border-radius:7px;background:linear-gradient(var(--pipe1),var(--pipe2));margin:22px 0 0}
+footer{padding:48px 0 40px;color:var(--mute);font-size:.88rem}
+</style>
+</head>
+<body>
+<header class="hero w">
+  <h1>Boru Gitar</h1>
+  <p>Sıradan bir metal boru gitar sapına ve slide’a dönüşüyor. Kamera elinizi izliyor, boru sabit bir eksen veriyor, teller gerçek bir tel modeliyle seslendiriliyor. Aşağıdaki demoyu kamerayla ya da fareyle çalın.</p>
+  <div class="stage"><canvas id="cv" width="1280" height="720"></canvas></div>
+  <div class="row">
+    <button class="p" id="bCam">Kamerayı başlat</button>
+    <button id="bTest">Ses testi</button>
+    <span class="seg" role="group" aria-label="Mod"><button id="mPipe" class="on">Boru (slide)</button><button id="mChord">Akor</button></span>
+    <span id="chips" class="row" style="margin:0" hidden></span>
+    <label for="vol">Ses</label><input type="range" id="vol" min="0" max="100" value="90">
+  </div>
+  <div class="row"><span id="status">Başlatılıyor…</span></div>
+  <ol class="how" id="how"></ol>
+</header>
+
+<main class="w">
+<section>
+  <h2>Neden boru?</h2>
+  <p>Havada çalan bir gitarcının dokunabileceği hiçbir şey yoktur. Bu yüzden el zamanla kayar, titrer ve perdeyi şaşırır. Metal boru bu eksikliği kapatır: elinizde gerçek bir sap vardır ve kamera için sabit bir referans doğrusu oluşturur.</p>
+  <div class="pipe" aria-hidden="true"></div>
+  <div class="grid">
+    <div><h3>Dokunsal sap</h3><p>Sol el boruyu tutar ve üzerinde kayar. Perde, elin boru ekseni boyunca bulunduğu yerden okunur.</p></div>
+    <div><h3>Sabit eksen</h3><p>Borunun uçlarına konan ArUco işaretçileri veya mat bantlar konum ve yönelimi (yaw, pitch, roll) 6 serbestlik dereceyle verir.</p></div>
+    <div><h3>Gerçek tel sesi</h3><p>Sağ el vuruşları Karplus-Strong ile sentezlenir. Demoda boru “açık Sol akortlu” slide gitar gibi çalar.</p></div>
+  </div>
+</section>
+
+<section>
+  <h2>Nasıl çalışıyor?</h2>
+  <div class="grid">
+    <div><h3>1. Görüntü</h3><p>OpenCV ile ArUco işaretçileri borunun konumunu alt-piksel hassasiyetle bulur. Webcam dışında donanım gerekmez.</p></div>
+    <div><h3>2. El takibi</h3><p>MediaPipe Hands her elde 21 eklem noktası çıkarır. Sol elin boru üzerindeki konumu perdeyi, sağ elin dikey hareketi mızrap vuruşunu belirler.</p></div>
+    <div><h3>3. Filtre</h3><p>One Euro filtresi ve hareketli ortalama mikro titremeyi bastırır. Demoda parmak ucu konumu One Euro ile yumuşatılır.</p></div>
+    <div><h3>4. Ses</h3><p>Rastgele gürültü halka belleğe doldurulur, ardışık iki örneğin ortalaması geri beslenir. Yüksek frekanslar sönerken temel frekans çınlar.</p></div>
+  </div>
+  <p style="margin-top:18px">Bu web demosu ArUco izlemeyi yapmaz. Boru, ekranda sanal bir eksen olarak çizilir. Gerçek ArUco ve 6-DoF takibi masaüstü (Python, OpenCV) prototipine aittir.</p>
+</section>
+
+<section>
+  <h2>Karşılaştırma</h2>
+  <div class="scroll"><table>
+    <thead><tr><th>Ölçüt</th><th>Saf hava gitarı</th><th class="me">Metal boru prototipi</th><th>IR/EMG sistemleri</th><th>MoCap (Vicon)</th></tr></thead>
+    <tbody>
+    <tr><td>Dokunsal geri bildirim</td><td>Yok</td><td class="me">Yüksek (boru sapı)</td><td>Orta (bileklik, eldiven)</td><td>Düşük (yalnızca marker)</td></tr>
+    <tr><td>Uzamsal kayma</td><td>Yüksek</td><td class="me">Çok düşük</td><td>Düşük</td><td>Sıfıra yakın</td></tr>
+    <tr><td>Maliyet</td><td>~$0</td><td class="me">&lt; $15</td><td>$150–300</td><td>$10.000+</td></tr>
+    <tr><td>Poz doğruluğu</td><td>± 12,5 mm</td><td class="me">± 1,8 mm</td><td>± 4,2 mm</td><td>± 0,09 mm</td></tr>
+    <tr><td>Kurulum</td><td>Çok kolay</td><td class="me">Kolay</td><td>Orta</td><td>Çok zor</td></tr>
+    </tbody></table></div>
+</section>
+
+<section>
+  <h2>Sırada ne var?</h2>
+  <div class="grid">
+    <div><h3>IMU füzyonu</h3><p>Boruya 9 eksenli IMU konur. El kamerayı kapatsa bile Genişletilmiş Kalman Filtresi pozu sürdürür.</p></div>
+    <div><h3>Aktif IR LED</h3><p>Pasif işaretçilerin yerine IR LED’ler gelir. Ortam ışığı değişse de takip bozulmaz.</p></div>
+    <div><h3>Vuruş tahmini</h3><p>RNN/LSTM, mızrap niyetini 10–15 ms önceden tahmin ederek gecikmeyi azaltır.</p></div>
+  </div>
+</section>
+</main>
+<footer class="w">Boru Gitar, MediaPipe Hands ve Web Audio ile çalışır. Kamera görüntüsü tarayıcıdan çıkmaz.</footer>
+
+<script type="module">
+const V="0.10.14";
+const LIB=`https://cdn.jsdelivr.net/npm/@mediapipe/tasks-vision@${V}/vision_bundle.mjs`;
+const WASM=`https://cdn.jsdelivr.net/npm/@mediapipe/tasks-vision@${V}/wasm`;
+const MODEL="https://storage.googleapis.com/mediapipe-models/hand_landmarker/hand_landmarker/float16/1/hand_landmarker.task";
+const OPEN_G=[73.42,98,146.83,196,246.94,293.66], OPEN_E=[82.41,110,146.83,196,246.94,329.63];
+const NAMES=["D","G","D","G","B","D"], NAMES_E=["E","A","D","G","B","E"];
+const CH=[{n:"Em",f:[0,2,2,0,0,0]},{n:"G",f:[3,2,0,0,0,3]},{n:"C",f:[-1,3,2,0,1,0]},{n:"D",f:[-1,-1,0,2,3,2]},{n:"Am",f:[-1,0,2,2,1,0]}];
+const EDGES=[[0,1],[1,2],[2,3],[3,4],[0,5],[5,6],[6,7],[7,8],[5,9],[9,10],[10,11],[11,12],[9,13],[13,14],[14,15],[15,16],[13,17],[17,18],[18,19],[19,20],[0,17]];
+const $=id=>document.getElementById(id);
+const cv=$("cv"),ctx=cv.getContext("2d");
+const video=document.createElement("video");video.playsInline=true;video.muted=true;
+let detector=null,stream=null,running=false,lastVid=-1,chord=0,cand=0,candN=0,ac=null,master=null,mode="pipe",slide=0,slideOn=false,lastPlay=0,fistN=0;
+const amp=new Float32Array(6),cool=new Float32Array(6),voices=[],cache={};
+const camStrum={prev:null},camStrum2={prev:null},ptrStrum={prev:null};
+let ptrActive=false,ptr={x:0,y:0};
+const cur={chordPts:null,strumPts:null,fingers:0,muted:false};
+const setStatus=t=>$("status").textContent=t;
+
+/* One Euro filtresi */
+class OE{constructor(mc=1.2,b=0.02){this.mc=mc;this.b=b;this.x=null;this.dx=0;this.t=0}
+ a(c,dt){const r=2*Math.PI*c*dt;return r/(r+1)}
+ f(x,t){if(this.x===null){this.x=x;this.t=t;return x}
+  const dt=Math.max(.001,(t-this.t)/1000);this.t=t;
+  const d=(x-this.x)/dt;this.dx+=this.a(1,dt)*(d-this.dx);
+  const c=this.mc+this.b*Math.abs(this.dx);this.x+=this.a(c,dt)*(x-this.x);return this.x}
+ reset(){this.x=null}}
+const fx=new OE(),fy=new OE();
+
+/* Ses: Karplus-Strong */
+function audio(){
+  if(!ac){ac=new(window.AudioContext||window.webkitAudioContext)();master=ac.createGain();master.gain.value=$("vol").value/100;
+    const comp=ac.createDynamicsCompressor();master.connect(comp);comp.connect(ac.destination)}
+  if(ac.state==="suspended")ac.resume();
+}
+$("vol").oninput=e=>{if(master)master.gain.value=e.target.value/100};
+function getBuf(freq){
+  const key=Math.round(freq*10);if(cache[key])return cache[key];
+  const sr=ac.sampleRate,N=Math.floor(sr*2.4),p=Math.max(2,Math.round(sr/freq));
+  const buf=ac.createBuffer(1,N,sr),d=buf.getChannelData(0),line=new Float32Array(p);let lp=0;
+  for(let i=0;i<p;i++){lp=lp*.5+(Math.random()*2-1)*.5;line[i]=lp}
+  const dec=0.9965-Math.min(0.0025,60/(freq*40000));let idx=0;
+  for(let n=0;n<N;n++){const a=line[idx],b=line[(idx+1)%p];d[n]=a;line[idx]=(a+b)*.5*dec;idx=(idx+1)%p}
+  return cache[key]=buf;
+}
+const fretOf=i=>mode==="pipe"?slide:CH[chord].f[i];
+const freqOf=(i,fr)=>(mode==="pipe"?OPEN_G:OPEN_E)[i]*Math.pow(2,fr/12);
+function play(i,vel,muted,delay){
+  const fr=fretOf(i);if(fr<0||!ac)return;
+  if(ac.state==="suspended")ac.resume();
+  const t=ac.currentTime+delay,src=ac.createBufferSource();src.buffer=getBuf(freqOf(i,fr));
+  const g=ac.createGain();g.gain.value=vel;src.connect(g);g.connect(master);
+  const old=voices[i];if(old){old.g.gain.setTargetAtTime(0,t,.02);try{old.src.stop(t+.2)}catch(e){}}
+  src.start(t);
+  if(muted){g.gain.setTargetAtTime(0,t+.15,.06);src.stop(t+.8)}else src.stop(t+2.4);
+  voices[i]={src,g};amp[i]=Math.max(amp[i],muted?vel*.4:vel);lastPlay=performance.now();
+}
+$("bTest").onclick=()=>{audio();[0,1,2,3,4,5].forEach(i=>play(i,.8,false,i*.06));setStatus("Ses motoru: "+ac.state+". Duymadıysanız cihazın sesini ve sekmenin sessize alınmadığını kontrol edin.")};
+
+/* Geometri */
+const PIPE={x1:()=>cv.width*.05,x2:()=>cv.width*.5,y:()=>cv.height*.5};
+const strX1=()=>cv.width*.55,strX2=()=>cv.width*.98,splitX=()=>cv.width*.5;
+const sy=i=>cv.height*(.2+.6*i/5);
+function strum(state,x,y,muted,now){
+  const H=cv.height;
+  if(state.prev){
+    const dt=(now-state.prev.t)/1000,dy=y-state.prev.y;
+    if(dt>0&&dt<.3&&Math.abs(dy)>H*.004&&x>strX1()*.9&&x<strX2()+40){
+      const hit=[];
+      for(let i=0;i<6;i++){const ys=sy(i);if((state.prev.y-ys)*(y-ys)<0&&now-cool[i]>70)hit.push(i)}
+      if(hit.length){if(dy<0)hit.reverse();
+        const vel=Math.min(1,.35+Math.abs(dy)/H/dt*.25);
+        hit.forEach((i,k)=>{cool[i]=now;play(i,vel,muted,k*.009)})}
+    }
+  }
+  state.prev={x,y,t:now};
+}
+function setSlideFromPoint(x,y,now,smooth){
+  const px=smooth?fx.f(x,now):x,py=smooth?fy.f(y,now):y;
+  const near=Math.abs(py-PIPE.y())<cv.height*.16&&px>PIPE.x1()-30&&px<PIPE.x2()+30;
+  slideOn=near;
+  if(near){const t=Math.min(1,Math.max(0,(px-PIPE.x1())/(PIPE.x2()-PIPE.x1())));slide=Math.round(t*12)}
+  else slide=0;
+  return {px,py};
+}
+const extended=pts=>{const d=(a,b)=>Math.hypot(a.x-b.x,a.y-b.y);
+  return [[8,6],[12,10],[16,14],[20,18]].filter(([t,p])=>d(pts[t],pts[0])>d(pts[p],pts[0])*1.12).length};
+
+/* MediaPipe */
+async function init(){
+  try{
+    setStatus("MediaPipe yükleniyor…");
+    const {HandLandmarker,FilesetResolver}=await import(LIB);
+    const fs=await FilesetResolver.forVisionTasks(WASM);
+    const mk=d=>HandLandmarker.createFromOptions(fs,{baseOptions:{modelAssetPath:MODEL,delegate:d},runningMode:"VIDEO",numHands:2,minHandDetectionConfidence:.5,minHandPresenceConfidence:.5,minTrackingConfidence:.5});
+    try{detector=await mk("GPU")}catch(e){detector=await mk("CPU")}
+    $("bCam").disabled=false;setStatus("Model hazır. Kamerayı başlatın ya da fareyle deneyin.");
+  }catch(e){
+    console.error(e);
+    setStatus("MediaPipe yüklenemedi ("+(e&&e.message?e.message:e)+"). Fare veya dokunmayla çalmayı deneyebilirsiniz: boru üzerinde gezinin, telleri sürükleyin.");
+  }
+}
+async function startCam(){
+  audio();
+  try{
+    stream=await navigator.mediaDevices.getUserMedia({video:{facingMode:"user",width:{ideal:1280},height:{ideal:720}}});
+    video.srcObject=stream;await video.play();
+    cv.width=video.videoWidth||1280;cv.height=video.videoHeight||720;
+    running=true;$("bCam").textContent="Kamerayı durdur";setStatus(detector?"Kamera açık. Ses: "+ac.state+".":"Kamera açık ama el takip modeli henüz yüklenmedi, yüklenince otomatik başlar.");
+  }catch(e){setStatus("Kamera açılamadı ("+(e&&e.name?e.name:e)+"). Tarayıcının kamera iznini verin, başka uygulamanın kamerayı kullanmadığından emin olun. Sayfa bir çerçeve içinde açıldıysa bağlantıyı yeni sekmede açın.")}
+}
+function stopCam(){
+  running=false;if(stream)stream.getTracks().forEach(t=>t.stop());stream=null;
+  cur.chordPts=cur.strumPts=null;camStrum.prev=camStrum2.prev=null;fx.reset();fy.reset();slide=0;slideOn=false;
+  $("bCam").textContent="Kamerayı başlat";setStatus("Kamera durduruldu.");
+}
+$("bCam").onclick=()=>running?stopCam():startCam();
+
+/* Mod ve akor seçimi */
+const HOW={pipe:["<b>Sol elinizle</b> ekrandaki sanal boruyu tutun ve işaret parmağınızı boru üzerinde kaydırın. Boru boyunca 12 perde vardır. Borudan uzaklaşırsanız teller açık çalar.","<b>Sağ elinizin</b> işaret parmağını sağdaki teller üzerinde yukarı aşağı oynatın. Hızlı vuruş sesi güçlendirir.","Sağ elinizi <b>yumruk</b> yaparsanız teller bastırılmış çalar.","Kamera yoksa fareyle boru üzerinde gezinip telleri sürükleyin. Ses gelmiyorsa önce <b>Ses testi</b>ne basın."],
+ chord:["<b>Sol elinizi</b> ekranın sol yarısında tutun. Parmak sayısı akoru seçer: yumruk Em, 1 parmak G, 2 parmak C, 3 parmak D, 4 parmak Am.","<b>Sağ elinizin</b> işaret parmağını teller üzerinde yukarı aşağı oynatın.","Sağ elinizi <b>yumruk</b> yaparsanız teller bastırılmış çalar.","Fareyle telleri sürükleyin, 1–5 tuşlarıyla akor değiştirin."]};
+function setMode(m){
+  mode=m;slide=0;slideOn=false;
+  $("mPipe").classList.toggle("on",m==="pipe");$("mChord").classList.toggle("on",m==="chord");
+  $("chips").hidden=m!=="chord";
+  $("how").innerHTML=HOW[m].map(t=>"<li>"+t+"</li>").join("");
+}
+$("mPipe").onclick=()=>setMode("pipe");$("mChord").onclick=()=>setMode("chord");setMode("pipe");
+CH.forEach((c,i)=>{const b=document.createElement("button");b.textContent=c.n;b.dataset.i=i;b.onclick=()=>{chord=i;audio()};$("chips").appendChild(b)});
+addEventListener("keydown",e=>{const k=+e.key;if(k>=1&&k<=5){chord=k-1;audio()}});
+
+/* Fare / dokunmatik */
+const toCv=e=>{const r=cv.getBoundingClientRect();return{x:(e.clientX-r.left)/r.width*cv.width,y:(e.clientY-r.top)/r.height*cv.height}};
+cv.addEventListener("pointerdown",e=>{audio();ptrActive=true;ptr=toCv(e);ptrStrum.prev=null;cv.setPointerCapture(e.pointerId);
+  if(mode==="pipe"&&ptr.x<splitX())setSlideFromPoint(ptr.x,ptr.y,performance.now(),false)});
+cv.addEventListener("pointermove",e=>{
+  const p=toCv(e);
+  if(mode==="pipe"&&p.x<splitX()&&!running)setSlideFromPoint(p.x,p.y,performance.now(),false);
+  if(!ptrActive)return;ptr=p;
+  if(p.x>=strX1()*.9)strum(ptrStrum,p.x,p.y,false,performance.now());
+});
+const endPtr=()=>{ptrActive=false;ptrStrum.prev=null};
+cv.addEventListener("pointerup",endPtr);cv.addEventListener("pointercancel",endPtr);
+
+/* El verisi */
+function onHands(list,now){
+  const hands=list.map(lm=>lm.map(p=>({x:(1-p.x)*cv.width,y:p.y*cv.height})));
+  hands.sort((a,b)=>a[9].x-b[9].x);
+  let L=null,R=null;
+  if(hands.length===2){L=hands[0];R=hands[1]}
+  else if(hands.length===1){if(hands[0][9].x<splitX())L=hands[0];else R=hands[0]}
+  cur.chordPts=L;cur.strumPts=R;
+  if(L){
+    if(mode==="chord"){const n=extended(L);cur.fingers=n;
+      if(n===cand)candN++;else{cand=n;candN=1}
+      if(candN>=3&&n<=4)chord=n}
+    else{const s=setSlideFromPoint(L[8].x,L[8].y,now,true);cur.sx=s.px;cur.sy=s.py}
+  }else if(mode==="pipe"){slide=0;slideOn=false;fx.reset();fy.reset()}
+  if(R){
+    fistN=extended(R)===0?fistN+1:0;cur.muted=fistN>=8;
+    strum(camStrum,R[8].x,R[8].y,cur.muted,now);strum(camStrum2,R[12].x,R[12].y,cur.muted,now);
+  }else{cur.muted=false;fistN=0}
+}
+
+/* Çizim */
+function drawPipe(W,H){
+  const x1=PIPE.x1(),x2=PIPE.x2(),y=PIPE.y(),h=H*.045;
+  const g=ctx.createLinearGradient(0,y-h,0,y+h);g.addColorStop(0,"#e9edf0");g.addColorStop(.35,"#a9b3ba");g.addColorStop(.7,"#59636b");g.addColorStop(1,"#8e999f");
+  ctx.fillStyle=g;ctx.beginPath();ctx.roundRect(x1-12,y-h,x2-x1+24,h*2,h);ctx.fill();
+  ctx.font=`${Math.round(W/80)}px system-ui,sans-serif`;ctx.textAlign="center";
+  for(let f=0;f<=12;f++){
+    const x=x1+(x2-x1)*f/12;
+    ctx.strokeStyle=f===slide&&slideOn?"#34c9dd":"rgba(255,255,255,.28)";ctx.lineWidth=f===slide&&slideOn?4:1.5;
+    ctx.beginPath();ctx.moveTo(x,y-h*1.5);ctx.lineTo(x,y+h*1.5);ctx.stroke();
+    ctx.fillStyle="rgba(232,237,240,.8)";ctx.fillText(f,x,y+h*2.6);
+  }
+  if(slideOn){const cx=x1+(x2-x1)*slide/12,rg=ctx.createRadialGradient(cx,y,2,cx,y,h*3);rg.addColorStop(0,"rgba(52,201,221,.65)");rg.addColorStop(1,"rgba(52,201,221,0)");
+    ctx.fillStyle=rg;ctx.fillRect(cx-h*3,y-h*3,h*6,h*6);
+    ctx.strokeStyle="#34c9dd";ctx.lineWidth=5;ctx.beginPath();ctx.roundRect(cx-h*.7,y-h*1.25,h*1.4,h*2.5,h*.5);ctx.stroke()}
+  ctx.fillStyle="#34c9dd";ctx.font=`700 ${Math.round(W/16)}px Bahnschrift,"Arial Narrow",system-ui,sans-serif`;
+  ctx.fillText(slideOn?"Perde "+slide:"Açık",(x1+x2)/2,H*.22);
+  ctx.font=`${Math.round(W/64)}px system-ui,sans-serif`;ctx.fillStyle="rgba(232,237,240,.8)";
+  ctx.fillText(slideOn?"Boruyu bastırdınız":"Sol elinizi boruya getirin",(x1+x2)/2,H*.22+W/40);
+}
+function frame(ts){
+  const W=cv.width,H=cv.height;
+  if(running&&video.readyState>=2){
+    ctx.save();ctx.translate(W,0);ctx.scale(-1,1);ctx.drawImage(video,0,0,W,H);ctx.restore();
+    ctx.fillStyle="rgba(8,12,14,.5)";ctx.fillRect(0,0,W,H);
+    if(detector&&video.currentTime!==lastVid){lastVid=video.currentTime;
+      try{onHands(detector.detectForVideo(video,performance.now()).landmarks,performance.now())}catch(e){console.error(e)}}
+  }else{const g=ctx.createLinearGradient(0,0,W,H);g.addColorStop(0,"#1a2127");g.addColorStop(1,"#0a0d0f");ctx.fillStyle=g;ctx.fillRect(0,0,W,H)}
+  const sx=splitX(),fs=Math.round(W/14);
+  ctx.strokeStyle="rgba(52,201,221,.3)";ctx.setLineDash([10,10]);ctx.lineWidth=2;
+  ctx.beginPath();ctx.moveTo(sx,0);ctx.lineTo(sx,H);ctx.stroke();ctx.setLineDash([]);
+  if(mode==="pipe")drawPipe(W,H);
+  else{
+    ctx.fillStyle="#34c9dd";ctx.font=`700 ${fs}px Bahnschrift,"Arial Narrow",system-ui,sans-serif`;ctx.textAlign="center";
+    ctx.fillText(CH[chord].n,sx/2,H*.52);
+    ctx.font=`${Math.round(W/64)}px system-ui,sans-serif`;ctx.fillStyle="rgba(232,237,240,.8)";
+    ctx.fillText(cur.chordPts?`Sol el: ${cur.fingers} parmak`:"Sol elinizi buraya getirin",sx/2,H*.52+fs*.5);
+  }
+  ctx.textAlign="center";ctx.font=`${Math.round(W/64)}px system-ui,sans-serif`;ctx.fillStyle="rgba(232,237,240,.8)";
+  if(!cur.strumPts&&!ptrActive&&running)ctx.fillText("Sağ elinizi teller üzerine getirin",(strX1()+strX2())/2,H*.1);
+  if(cur.muted)ctx.fillText("Bastırılmış çalma",(strX1()+strX2())/2,H*.92);
+  const x1=strX1(),x2=strX2();
+  ctx.textAlign="left";ctx.font=`${Math.round(W/70)}px system-ui,sans-serif`;
+  for(let i=0;i<6;i++){
+    const y=sy(i),a=amp[i];amp[i]*=.955;const f=fretOf(i);
+    ctx.lineWidth=1.5+(5-i)*.55;ctx.strokeStyle=f<0?"rgba(147,160,170,.45)":"#dfe6ea";
+    ctx.shadowColor="#34c9dd";ctx.shadowBlur=a>.05?18*a:0;
+    ctx.beginPath();
+    for(let x=x1;x<=x2;x+=10){const u=(x-x1)/(x2-x1);const yy=y+a*H*.03*Math.sin(Math.PI*u)*Math.sin(ts*.09+i);x===x1?ctx.moveTo(x,yy):ctx.lineTo(x,yy)}
+    ctx.stroke();ctx.shadowBlur=0;ctx.fillStyle="rgba(232,237,240,.85)";
+    ctx.fillText(`${(mode==="pipe"?NAMES:NAMES_E)[i]} ${f<0?"×":f}`,x1-W*.045,y+5);
+  }
+  const hand=(pts,col,big)=>{
+    ctx.strokeStyle=col;ctx.lineWidth=Math.max(2,W/400);ctx.beginPath();
+    EDGES.forEach(([a,b])=>{ctx.moveTo(pts[a].x,pts[a].y);ctx.lineTo(pts[b].x,pts[b].y)});ctx.stroke();
+    ctx.fillStyle=col;pts.forEach(p=>{ctx.beginPath();ctx.arc(p.x,p.y,W/280,0,7);ctx.fill()});
+    if(big){ctx.beginPath();ctx.arc(pts[8].x,pts[8].y,W/60,0,7);ctx.fillStyle="#fff";ctx.fill()}
+  };
+  if(cur.chordPts)hand(cur.chordPts,"#5eead4",false);
+  if(cur.strumPts)hand(cur.strumPts,"#f2c14e",true);
+  if(ptrActive){ctx.beginPath();ctx.arc(ptr.x,ptr.y,W/70,0,7);ctx.fillStyle="#fff";ctx.fill()}
+  if(performance.now()-lastPlay<500){ctx.textAlign="right";ctx.fillStyle="#34c9dd";ctx.font=`700 ${Math.round(W/30)}px system-ui,sans-serif`;
+    ctx.fillText("♪ "+(mode==="pipe"?(slideOn?"Perde "+slide:"Açık"):CH[chord].n),W-W/40,W/22)}
+  document.querySelectorAll("#chips button").forEach(b=>b.classList.toggle("on",+b.dataset.i===chord));
+  requestAnimationFrame(frame);
+}
+requestAnimationFrame(frame);
+init();
+</script>
+</body>
+</html>
